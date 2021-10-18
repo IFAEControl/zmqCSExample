@@ -11,6 +11,8 @@ __maintainer__ = 'Otger Ballester'
 __email__ = 'otger@ifae.es'
 
 import os
+
+import zmq.error
 from PyQt5.QtWidgets import QWidget, QAction
 from PyQt5.QtGui import QIcon, QFont
 from simplecs_gui.system.logger import get_logger
@@ -84,10 +86,15 @@ class ModexBigWidget(QWidget):
 
     def _send_echo_cmd(self):
         value = self._ui.ledit_echo_cmd.text()
-        ret_val = self._parent.backend.comm_client.modex.echo(value)
-        # log.debug(f"Received answer for echo command: '{ret_val.as_dict}'")
-        self._ui.lbl_echo_recvd.setText(str(ret_val.ans))
-        self._ui.lbl_echo_recvd_on.setText(datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S"))
+        try:
+            ret_val = self._parent.backend.comm_client.modex.echo(value)
+        except zmq.error.Again:
+            self._ui.lbl_echo_recvd.setText('No access to server')
+            self._ui.lbl_echo_recvd_on.clear()
+        else:
+            # log.debug(f"Received answer for echo command: '{ret_val.as_dict}'")
+            self._ui.lbl_echo_recvd.setText(str(ret_val.ans))
+            self._ui.lbl_echo_recvd_on.setText(datetime.datetime.utcnow().strftime("%Y/%m/%d %H:%M:%S"))
 
     def _set_max_rnd(self):
         value = self._ui.ledit_max_rnd.text()
